@@ -73,7 +73,7 @@ Les tokkens associés, non explicites dans leur nom, sont :
 ```C++
 main(x,y,z) 
 {
-	t = x + y + z;
+    t = x + y + z;
     a = 0;
     while(t)
     {
