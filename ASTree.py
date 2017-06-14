@@ -237,19 +237,27 @@ pop eax
         return n
         
     def simplifyID_aux(self, i, useful, useless, path):
+        ## useful est une liste de liste contenant : le nom de la variable, le niveau dans l'arbre, le chemin jusqu'à lui, l'arbre
+        ##      un booléen disant si la variable a servi dans une affectation
+        
+        ## useless ne sert pas dans le programme, on le laisse pour une éventuelle utilité.
         j = 0
         for son in self.sons:
-            if type(son) == str:
-                ind = AST.isInList(useful, son)
-                if ind >= 0:
+            ## parcourt les fils
+            if type(son) == str: ## si le fils est de type str alors c'est un ID (du fait de la construction de l'arbre)
+                ind = AST.isInList(useful, son) ## on regarde l'indice de la variable dans la liste, dans les éléments n'ayant pas été affectés jusqu'ici
+                if ind >= 0: ## si la variable est dans la liste
                     useless.append(useful[ind])
-                    useful.remove(useful[ind]) 
+                    useful.remove(useful[ind])  ## on retire de la liste la variable homonyme qui n'a pas servi dans une affectation
                 useful.append([son, i, path + str(j), self, False])
             elif son.value == "while":
-                son.simplifyWhile()
-                useful.append(['while', i, path + str(j), son, True])
+                son.simplifyWhile() ## Simplification du while
+                useful.append(['while', i, path + str(j), son, True]) ## on noté qu'un while sert toujours sauf exception sur l'expression et sera remis
             else:
                 if son.type == "AFFECT":
+                    ## On reconstitue l'affectation en string et on observe si 
+                    ## pour les variables pour lesquelles on n'a pas trouvé d'affectation utile
+                    ## elles apparaissent dans l'affectation 
                     s = son.sons[1].reconstitueExpression()
                     for x in useful:
                         if x[0] in s and not x[4]:
@@ -257,9 +265,12 @@ pop eax
                             indic = s.index(x[0])
                             s = s[:indic] + s[indic+1:]
                 son.simplifyID_aux(i + 1, useful, useless, path + str(j))
+                ## on simplifie sur le fils récursivement
             j += 1
             
     def isInList(useful, item):
+        ## Retourne l'emplacement de la variable item dans la liste des éléments utiles
+        ## En ne regardant seulement les éléments pour lesquelles on n'a pas vérifié s'ils ont auparavant servi dans une affectation.
         for i in range(len(useful)):
             if not useful[i][4] and item == useful[i][0]:
                 return i
@@ -269,16 +280,18 @@ pop eax
         useful = []
         useless = []
         self.simplifyID_aux(0, useful, useless, "")
-        tree = AST("END", ";", "commande")
+        tree = AST("END", ";", "commande")  ## on crée le nouvelle arbre débutant comme une commande
         treeson = tree
         for x in useful:
+            ## Retrait des while inutiles (d'expressioin évaluée à zéros)
             if type(x[3].sons[0]) != str and x[3].sons[0].value == "toremove":
                 useful.remove(x)
         if len(useful) == 1:
-            tree = useful[0][3]
+            tree = useful[0][3] ## si le programme ne contient plus qu'une affectation utile, alors on retourne l'affectation agissant comme commande
         else:
             for i in range(len(useful)):
-                while len(treeson.sons) > 1:
+                # on parcourt la liste des affectations utiles
+                while len(treeson.sons) > 1: ## on cherche l'emplacement de la nouvelle affectation
                     treeson =  treeson.sons[1]
                 if i + 2 < len(useful):
                     treeson.sons.append(useful[i][3])
@@ -290,16 +303,24 @@ pop eax
         
     def simplifyExpression_aux(self, affect):
         if self.value == "while":
+            ## On retient l'état du magasin à l'entrée de la boucle while
+            ## pour qu'on puisse calculer l'expression au moment de la boucle
+            ## cela sert pour la simplification des while.
             self.mag = dict(affect)
         elif self.value == ";":
             for son in self.sons:
                 if son.type == "AFFECT":
+                    ## on calcule l'expression et on la range dans le dictionnaire
                     affect[son.sons[0]] = son.sons[1].calculeExpression(affect)
                     if type(affect[son.sons[0]]) in [int, float]:
+                        ## si l'expression est de type int, ou float
+                        ## on la range dans le magasin.
                         son.sons[1] = AST("NUMBER", affect[son.sons[0]], "expression")
                 else:
                     son.simplifyExpression_aux(affect)
         elif self.value == "AFFECT":
+            ## Si c'est une affectation, on calcule l'expression
+            ## on fait cela dans le cas où la commande se résume à une affectation (dans un while par ex).
             affect[son.sons[0]] = son.sons[1].calculeExpression(affect)
             if type(affect[son.sons[0]]) in [int, float]:
                 son.sons[1] = AST("NUMBER", affect[son.sons[0]], "expression")
@@ -310,13 +331,29 @@ pop eax
         
     def simplifyWhile(self, ful = [], less = []):
         if self.value == "while":
+            ## Simplification du programme interne
+            ## cela se fait sur de nouvelles listes useful et useless,
+            ## pour ne pas que des simplifications du bloc principal
+            ## viennent altérer le bloc while.
             self.sons[1] = self.sons[1].simplifyID()
+            
+            ## Simplification des expressions dans la boucle,
+            ## en prenant un nouveau magasin, pour les mêmes raisons.
             self.sons[1].simplifyExpression()
+            
+            ## calcul de l'expression sur le bon magasin
             e = self.sons[0].calculeExpression(self.mag)
             if e == 0:
+            ## si l'expression est nulle, alors on doit retirer la boucle
+            ## on note la valeur de l'expression à 'toremove', de sorte 
+            ## qu'elle ne soit pas remise dans l'arbre lors du
+            ## simplifyID suivant
                 self.sons[0] = AST("NUMBER", "toremove", "remove")
 
     def reconstitueExpression(self):
+        """
+        Sous forme de chaine de caractère recopie l'expression associé à self.
+        """
         if self.nature == "expression":
             if self.type == "OPBIN":
                 return self.sons[0].reconstitueExpression() + " " + self.value + " " + self.sons[1].reconstitueExpression()
@@ -357,10 +394,14 @@ pop eax
             return self.value
 
     def makeBlock_aux(self,listBlock,idBlock, idParent, pere):
+        ## On parcourt récursivement, lorsqu'on rencontre un
+        ## nouveau bloc on ajoute à la liste une liste contenant les blocs.
         if self.value == ";":
+            ## Si on est dans un nouveau bloc on le rajoute
             if not len(listBlock)>idBlock:
                 listBlock.append([idParent])
             if self.sons[1].value!=";":
+                    # cas d'une commande finale
                     if self.sons[1].value=="=" and self.sons[0].value=="=":
                         listBlock[idBlock].append([self.sons[0], pere, self])
                         listBlock[idBlock].append([self.sons[1], pere, self])
@@ -379,6 +420,7 @@ pop eax
                         self.sons[1].sons[1].makeBlock_aux(listBlock,len(listBlock),idBlock,self)
                         
             else:
+                # sinon on parcourt récursivement l'arbre
                 if self.sons[0].value=="=":
                     listBlock[idBlock].append([self.sons[0], pere, self])
                 elif self.sons[0].value=="while":
@@ -395,22 +437,25 @@ pop eax
         self.makeBlock_aux(listBlock,0, -1, self)
         return listBlock
         
-    def simplifyofdoom(self):
+    def simplifyVariables(self):
+        ## On parcourt les blocs obtenus
+        ## On calcule tous les blocs fils
+        ## On regarde si la variables est utilisé, cf isUseless
         listBlock=self.makeBlock()
         for block in listBlock:
             childBlock=[b for b in listBlock if b[0]==listBlock.index(block)]
             for x in block[1:]:
-                print(isUseless(childBlock, x))
                 if isUseless(childBlock, x):
-                    print(str(x[0] in x[1].sons) + "mmmm")
                     if x[0] in x[1].sons:
                         x[1].sons = x[2].sons[1].sons
                     else:
                         x[1].sons[1] = x[2].sons[1]
-                    print(x)
+
             
     
 def isUseless(childBlock, commande):
+    ## On parcourt tous les block des enfants, et 
+    ## on regarde si la variable est affectée.
     if commande[0].sons[1].type!="NUMBER":
         return False
     for block in childBlock:

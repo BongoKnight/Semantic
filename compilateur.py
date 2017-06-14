@@ -139,7 +139,7 @@ def p_expression(p):
 def p_error(p):
     print("erreur : " + str(p))
 
-start = 'programme'
+start = 'commande'
 parser = yacc.yacc()
 
 #Arbre = yacc.parse("main(x,y,z,t) {while(48 == 48){a = 2 * 3 + 4; b = 5 + 6; a = b + 2};; print(3+4)}")
@@ -148,18 +148,9 @@ parser = yacc.yacc()
 #Arbre = yacc.parse("t=3; y=t; x=y; z=x")
 
 #Arbre = yacc.parse("x=3; y = 3; while(x){y = y + 1}; z=z-1")
-print(yacc.parse("""
-main(x,y,z) 
-{
-	t = x + y + z;
-    a = 0;
-    while(t)
-    {
-    	t = t - 1;
-        a = t + a
-    };;
-    print(a)
-}"""))
+
+#Arbre = yacc.parse("x = 4;y = x + 2;z = 8 + x + y")
+Arbre = yacc.parse("x = 4;y = 6;t = 8;while(t){	t = t - 1;    y = y + 1}")
 
 print(Arbre)
 Arbre = Arbre.simplifyID()
@@ -170,7 +161,7 @@ Arbre = Arbre.simplifyID()
 print(Arbre)
 Arbre = Arbre.simplifyID()
 print(Arbre)
-Arbre.simplifyofdoom()
+Arbre.simplifyVariables()
 print(Arbre)
 
 #arbre = yacc.parse("main(X) {while(X) {Y=Y+1; X=X-1}; t = 3;; print(Y)}")
