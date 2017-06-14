@@ -44,4 +44,12 @@ Out:
          \-Number : 4
 ```
 
+# Langage de programmation
+Un programme se décompose de la manière suivante :
+```bash
+main ( *enum* ) { *command* ;; print( *expression* ) }
+```
+
+
+
 
