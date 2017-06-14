@@ -1,0 +1,244 @@
+Created by PLY version 3.10 (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    IF
+    RETURN
+
+Grammar
+
+Rule 0     S' -> commande
+Rule 1     programme -> MAIN LPAREN enum RPAREN LACO commande FINISH PRINT LPAREN expression RPAREN RACO
+Rule 2     enum -> ID
+Rule 3     enum -> ID COMMA enum
+Rule 4     empty -> <empty>
+Rule 5     commande -> ID AFFECT expression
+Rule 6     commande -> commande END commande
+Rule 7     commande -> WHILE LPAREN expression RPAREN LACO commande RACO
+Rule 8     expression -> NUMBER
+Rule 9     expression -> ID
+Rule 10    expression -> expression OPBIN expression
+
+Terminals, with rules where they appear
+
+AFFECT               : 5
+COMMA                : 3
+END                  : 6
+FINISH               : 1
+ID                   : 2 3 5 9
+IF                   : 
+LACO                 : 1 7
+LPAREN               : 1 1 7
+MAIN                 : 1
+NUMBER               : 8
+OPBIN                : 10
+PRINT                : 1
+RACO                 : 1 7
+RETURN               : 
+RPAREN               : 1 1 7
+WHILE                : 7
+error                : 
+
+Nonterminals, with rules where they appear
+
+commande             : 1 6 6 7 0
+empty                : 
+enum                 : 1 3
+expression           : 1 5 7 10 10
+programme            : 
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . commande
+    (5) commande -> . ID AFFECT expression
+    (6) commande -> . commande END commande
+    (7) commande -> . WHILE LPAREN expression RPAREN LACO commande RACO
+
+    ID              shift and go to state 1
+    WHILE           shift and go to state 2
+
+    commande                       shift and go to state 3
+
+state 1
+
+    (5) commande -> ID . AFFECT expression
+
+    AFFECT          shift and go to state 4
+
+
+state 2
+
+    (7) commande -> WHILE . LPAREN expression RPAREN LACO commande RACO
+
+    LPAREN          shift and go to state 5
+
+
+state 3
+
+    (0) S' -> commande .
+    (6) commande -> commande . END commande
+
+    END             shift and go to state 6
+
+
+state 4
+
+    (5) commande -> ID AFFECT . expression
+    (8) expression -> . NUMBER
+    (9) expression -> . ID
+    (10) expression -> . expression OPBIN expression
+
+    NUMBER          shift and go to state 9
+    ID              shift and go to state 7
+
+    expression                     shift and go to state 8
+
+state 5
+
+    (7) commande -> WHILE LPAREN . expression RPAREN LACO commande RACO
+    (8) expression -> . NUMBER
+    (9) expression -> . ID
+    (10) expression -> . expression OPBIN expression
+
+    NUMBER          shift and go to state 9
+    ID              shift and go to state 7
+
+    expression                     shift and go to state 10
+
+state 6
+
+    (6) commande -> commande END . commande
+    (5) commande -> . ID AFFECT expression
+    (6) commande -> . commande END commande
+    (7) commande -> . WHILE LPAREN expression RPAREN LACO commande RACO
+
+    ID              shift and go to state 1
+    WHILE           shift and go to state 2
+
+    commande                       shift and go to state 11
+
+state 7
+
+    (9) expression -> ID .
+
+    OPBIN           reduce using rule 9 (expression -> ID .)
+    END             reduce using rule 9 (expression -> ID .)
+    $end            reduce using rule 9 (expression -> ID .)
+    RACO            reduce using rule 9 (expression -> ID .)
+    RPAREN          reduce using rule 9 (expression -> ID .)
+
+
+state 8
+
+    (5) commande -> ID AFFECT expression .
+    (10) expression -> expression . OPBIN expression
+
+    RACO            reduce using rule 5 (commande -> ID AFFECT expression .)
+    END             reduce using rule 5 (commande -> ID AFFECT expression .)
+    $end            reduce using rule 5 (commande -> ID AFFECT expression .)
+    OPBIN           shift and go to state 12
+
+
+state 9
+
+    (8) expression -> NUMBER .
+
+    OPBIN           reduce using rule 8 (expression -> NUMBER .)
+    END             reduce using rule 8 (expression -> NUMBER .)
+    $end            reduce using rule 8 (expression -> NUMBER .)
+    RACO            reduce using rule 8 (expression -> NUMBER .)
+    RPAREN          reduce using rule 8 (expression -> NUMBER .)
+
+
+state 10
+
+    (7) commande -> WHILE LPAREN expression . RPAREN LACO commande RACO
+    (10) expression -> expression . OPBIN expression
+
+    RPAREN          shift and go to state 13
+    OPBIN           shift and go to state 12
+
+
+state 11
+
+    (6) commande -> commande END commande .
+    (6) commande -> commande . END commande
+
+  ! shift/reduce conflict for END resolved as shift
+    RACO            reduce using rule 6 (commande -> commande END commande .)
+    $end            reduce using rule 6 (commande -> commande END commande .)
+    END             shift and go to state 6
+
+  ! END             [ reduce using rule 6 (commande -> commande END commande .) ]
+
+
+state 12
+
+    (10) expression -> expression OPBIN . expression
+    (8) expression -> . NUMBER
+    (9) expression -> . ID
+    (10) expression -> . expression OPBIN expression
+
+    NUMBER          shift and go to state 9
+    ID              shift and go to state 7
+
+    expression                     shift and go to state 14
+
+state 13
+
+    (7) commande -> WHILE LPAREN expression RPAREN . LACO commande RACO
+
+    LACO            shift and go to state 15
+
+
+state 14
+
+    (10) expression -> expression OPBIN expression .
+    (10) expression -> expression . OPBIN expression
+
+  ! shift/reduce conflict for OPBIN resolved as shift
+    END             reduce using rule 10 (expression -> expression OPBIN expression .)
+    $end            reduce using rule 10 (expression -> expression OPBIN expression .)
+    RACO            reduce using rule 10 (expression -> expression OPBIN expression .)
+    RPAREN          reduce using rule 10 (expression -> expression OPBIN expression .)
+    OPBIN           shift and go to state 12
+
+  ! OPBIN           [ reduce using rule 10 (expression -> expression OPBIN expression .) ]
+
+
+state 15
+
+    (7) commande -> WHILE LPAREN expression RPAREN LACO . commande RACO
+    (5) commande -> . ID AFFECT expression
+    (6) commande -> . commande END commande
+    (7) commande -> . WHILE LPAREN expression RPAREN LACO commande RACO
+
+    ID              shift and go to state 1
+    WHILE           shift and go to state 2
+
+    commande                       shift and go to state 16
+
+state 16
+
+    (7) commande -> WHILE LPAREN expression RPAREN LACO commande . RACO
+    (6) commande -> commande . END commande
+
+    RACO            shift and go to state 17
+    END             shift and go to state 6
+
+
+state 17
+
+    (7) commande -> WHILE LPAREN expression RPAREN LACO commande RACO .
+
+    RACO            reduce using rule 7 (commande -> WHILE LPAREN expression RPAREN LACO commande RACO .)
+    END             reduce using rule 7 (commande -> WHILE LPAREN expression RPAREN LACO commande RACO .)
+    $end            reduce using rule 7 (commande -> WHILE LPAREN expression RPAREN LACO commande RACO .)
+
+WARNING: 
+WARNING: Conflicts:
+WARNING: 
+WARNING: shift/reduce conflict for END in state 11 resolved as shift
+WARNING: shift/reduce conflict for OPBIN in state 14 resolved as shift
