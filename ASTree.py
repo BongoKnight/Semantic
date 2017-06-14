@@ -20,25 +20,30 @@ class AST:
         self.mag = {}
         
     def __str__(self):
-        
-        if self.nature == "expression":
-            return self.e_toArbre().get_ascii(attributes=["name"])
-            
-        elif self.nature == "commande":
-            return self.c_toArbre().get_ascii(attributes=["name"])
-            
-        else :
-            return self.p_toArbre().get_ascii(attributes=["name"])
+        try :
+            if self.nature == "expression":
+                return self.e_toArbre().get_ascii(attributes=["name"])
+                
+            elif self.nature == "commande":
+                return self.c_toArbre().get_ascii(attributes=["name"])
+                
+            else :
+                return self.p_toArbre().get_ascii(attributes=["name"])
+        except :
+            return str(self.value) + str(self.sons)
         
     def __repr__(self):
-        if self.nature == "expression":
-            return self.e_toArbre().get_ascii(attributes=["name"])
-            
-        elif self.nature == "commande":
-            return self.c_toArbre().get_ascii(attributes=["name"])
-            
-        else :
-            return self.p_toArbre().get_ascii(attributes=["name"])
+        try :
+            if self.nature == "expression":
+                return self.e_toArbre().get_ascii(attributes=["name"])
+                
+            elif self.nature == "commande":
+                return self.c_toArbre().get_ascii(attributes=["name"])
+                
+            else :
+                return self.p_toArbre().get_ascii(attributes=["name"])
+        except :
+            return str(self.value) + str(self.sons)
     
     def e_toASM(self):
         
@@ -132,6 +137,7 @@ pop eax
             
     def p_toASM(self):
         ## Ouverture Lecture
+        AST.idWhile = 0
         f = open("motif.asm")
         motif = f.read()
         
@@ -268,27 +274,35 @@ pop eax
         for x in useful:
             if type(x[3].sons[0]) != str and x[3].sons[0].value == "toremove":
                 useful.remove(x)
-        for i in range(len(useful)):
-            while len(treeson.sons) > 1:
-                treeson =  treeson.sons[1]
-            if i + 2 < len(useful):
-                treeson.sons.append(useful[i][3])
-                treeson.sons.append(AST("END", ";", "commande"))
-            else:
-                treeson.sons.append(useful[i][3])
+        if len(useful) == 1:
+            tree = useful[0][3]
+        else:
+            for i in range(len(useful)):
+                while len(treeson.sons) > 1:
+                    treeson =  treeson.sons[1]
+                if i + 2 < len(useful):
+                    treeson.sons.append(useful[i][3])
+                    treeson.sons.append(AST("END", ";", "commande"))
+                else:
+                    treeson.sons.append(useful[i][3])
 
         return tree
         
     def simplifyExpression_aux(self, affect):
         if self.value == "while":
             self.mag = dict(affect)
-        for son in self.sons:
-            if son.type == "AFFECT":
-                affect[son.sons[0]] = son.sons[1].calculeExpression(affect)
-                if type(affect[son.sons[0]]) in [int, float]:
-                    son.sons[1] = AST("NUMBER", affect[son.sons[0]], "expression")
-            else:
-                son.simplifyExpression_aux(affect)
+        elif self.value == ";":
+            for son in self.sons:
+                if son.type == "AFFECT":
+                    affect[son.sons[0]] = son.sons[1].calculeExpression(affect)
+                    if type(affect[son.sons[0]]) in [int, float]:
+                        son.sons[1] = AST("NUMBER", affect[son.sons[0]], "expression")
+                else:
+                    son.simplifyExpression_aux(affect)
+        elif self.value == "AFFECT":
+            affect[son.sons[0]] = son.sons[1].calculeExpression(affect)
+            if type(affect[son.sons[0]]) in [int, float]:
+                son.sons[1] = AST("NUMBER", affect[son.sons[0]], "expression")
 
     def simplifyExpression(self):
         affect = {}
@@ -297,6 +311,7 @@ pop eax
     def simplifyWhile(self, ful = [], less = []):
         if self.value == "while":
             self.sons[1] = self.sons[1].simplifyID()
+            self.sons[1].simplifyExpression()
             e = self.sons[0].calculeExpression(self.mag)
             if e == 0:
                 self.sons[0] = AST("NUMBER", "toremove", "remove")
@@ -318,20 +333,97 @@ pop eax
 
     def calculeExpression(self, dic):
         if self.type == "OPBIN":
-            if self.value == "+":
-                return self.sons[0].calculeExpression(dic) + self.sons[1].calculeExpression(dic)
-            elif self.value == "-":
-                return self.sons[0].calculeExpression(dic) - self.sons[1].calculeExpression(dic)
-            elif self.value == "/":
-                return self.sons[0].calculeExpression(dic) / self.sons[1].calculeExpression(dic)
-            elif self.value == "*":
-                return self.sons[0].calculeExpression(dic) + self.sons[1].calculeExpression(dic)
+            x = self.sons[0].calculeExpression(dic)
+            y = self.sons[1].calculeExpression(dic)
+            if type(x) in [int, float] and type(y) in [int, float]:
+                if self.value == "+":
+                    return x + y 
+                elif self.value == "-":
+                    return x - y
+                elif self.value == "/":
+                    return x / y
+                elif self.value == "*":
+                    return x * y
+                else:
+                    return "Not known opbin"
             else:
-                return "Not known opbin"
+                return "Id in expression"
         elif self.type == "ID":
             if self.value in dic.keys():
                 return dic[self.value]
             else:
-                return "do not change"
+                return self.value
         else:
             return self.value
+
+    def makeBlock_aux(self,listBlock,idBlock, idParent, pere):
+        if self.value == ";":
+            if not len(listBlock)>idBlock:
+                listBlock.append([idParent])
+            if self.sons[1].value!=";":
+                    if self.sons[1].value=="=" and self.sons[0].value=="=":
+                        listBlock[idBlock].append([self.sons[0], pere, self])
+                        listBlock[idBlock].append([self.sons[1], pere, self])
+                    if self.sons[0].value=="while" and self.sons[1].value=="=":
+                        if not len(listBlock)>idBlock:
+                            listBlock.append([])
+                        listBlock[idBlock].append([self.sons[1], pere, self])
+                        self.sons[0].sons[1].makeBlock_aux(listBlock,len(listBlock), idBlock, self)
+                    elif self.sons[1].value=="while" and self.sons[0].value=="=":
+                        if not len(listBlock)>idBlock:
+                            listBlock.append([])
+                        listBlock[idBlock].append([self.sons[0], pere, self])
+                        self.sons[1].sons[1].makeBlock_aux(listBlock,len(listBlock), idBlock, self)
+                    else:
+                        self.sons[0].sons[1].makeBlock_aux(listBlock,len(listBlock),idBlock, self)
+                        self.sons[1].sons[1].makeBlock_aux(listBlock,len(listBlock),idBlock,self)
+                        
+            else:
+                if self.sons[0].value=="=":
+                    listBlock[idBlock].append([self.sons[0], pere, self])
+                elif self.sons[0].value=="while":
+                    #cas du while
+                    self.sons[0].sons[1].makeBlock_aux(listBlock,len(listBlock), idBlock,self)
+                self.sons[1].makeBlock_aux(listBlock,idBlock, idBlock,self)
+        elif self.value == "=":
+            if not len(listBlock)>idBlock:
+                listBlock.append([idParent])
+            listBlock[idBlock].append([self, pere, self])
+            
+    def makeBlock(self):
+        listBlock=[]
+        self.makeBlock_aux(listBlock,0, -1, self)
+        return listBlock
+        
+    def simplifyofdoom(self):
+        listBlock=self.makeBlock()
+        for block in listBlock:
+            childBlock=[b for b in listBlock if b[0]==listBlock.index(block)]
+            for x in block[1:]:
+                print(isUseless(childBlock, x))
+                if isUseless(childBlock, x):
+                    print(str(x[0] in x[1].sons) + "mmmm")
+                    if x[0] in x[1].sons:
+                        x[1].sons = x[2].sons[1].sons
+                    else:
+                        x[1].sons[1] = x[2].sons[1]
+                    print(x)
+            
+    
+def isUseless(childBlock, commande):
+    if commande[0].sons[1].type!="NUMBER":
+        return False
+    for block in childBlock:
+        for x in block[1:]:
+            if x[0].sons[0]==commande[0].sons[0]:
+                return False
+        return True
+        
+                        
+                        
+        
+            
+            
+                            
+            
+                        

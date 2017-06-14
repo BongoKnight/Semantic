@@ -142,9 +142,13 @@ def p_error(p):
 start = 'commande'
 parser = yacc.yacc()
 
-#print(yacc.parse("main(x,y,z,t) {while(48 == 48){a = 2 * (3 + 4); b = 5 + 6; a = b + 2}; print(3+4);}"))
-#Arbre = yacc.parse("x = 0; y = 6; y = 4; while(x){x=4; z = 8; y = 4;x=5 ;z = x + 5;  y = z + x; x = 3; x = 4; x = y + 7}; z = 3 +12")
-Arbre = yacc.parse("y=t; x=y; z=x")
+#Arbre = yacc.parse("main(x,y,z,t) {while(48 == 48){a = 2 * 3 + 4; b = 5 + 6; a = b + 2};; print(3+4)}")
+#print(Arbre)
+#Arbre = yacc.parse("x = 5; x=x+1; y = 6; y = 4; z = 3; while(x){z = 8; y = 4 ;z = x + 5;  y = z + x; x = 3; x = 4; x = y + 7}; z=10")
+#Arbre = yacc.parse("t=3; y=t; x=y; z=x")
+
+Arbre = yacc.parse("x=3; y = 3; while(x){y = y + 1}; z=z-1")
+
 print(Arbre)
 Arbre = Arbre.simplifyID()
 print(Arbre)
@@ -152,8 +156,11 @@ Arbre.simplifyExpression()
 print(Arbre)
 Arbre = Arbre.simplifyID()
 print(Arbre)
-#Arbre = Arbre.simplifyID()
-#print(Arbre)
+Arbre = Arbre.simplifyID()
+print(Arbre)
+Arbre.simplifyofdoom()
+print(Arbre)
+
 #arbre = yacc.parse("main(X) {while(X) {Y=Y+1; X=X-1}; t = 3;; print(Y)}")
 
 #print(arbre.p_toASM())
