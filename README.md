@@ -7,7 +7,7 @@ Pour l'affichage, il faut installer le module python ete3.
 pip3 install ete3
 ```
 
-## Principe
+## Principe d'affichage
 Nous parcourons l'arbre de synthaxe abstraite de classe AST, et nous formons des TreeNode récursivement selon leur type. L'affichage final est produit en ascii en console.
 ```bash
 >>> print(yacc.parse("main(x,y,z,t) {while(48 == 48){a = 2 * 3 + 4; b = 5 + 6; a = b + 2};; print(3+4)}"))
