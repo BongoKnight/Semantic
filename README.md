@@ -762,3 +762,7 @@ On reçoit l'arbre suivant après les simplifications usuelles :
                  \+|
                     \-Number : 1
 ```
+
+# Améliorations possibles:
+* Gestion de la simplification des variables dans les blocs fils de fils, car actuellement on regarde uniquement le bloc inférieur,
+* Non simplification des variables dans le bloc PRINT (non implémenté actuellement)
